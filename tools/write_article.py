@@ -1,0 +1,23 @@
+#write_article.py 撰写文章
+
+def write_article(topic:str,word_count:int=1200,style:str="正式") ->str:
+    style_map = {
+        "正式": "语言严谨，逻辑清晰，适合职场阅读",
+        "轻松": "语言活泼，像朋友聊天，读起来不累",
+        "专业": "使用行业术语，有深度分析，适合专业人士",
+        "故事感": "用故事开头，有细节描写，有代入感"
+    }
+    style_desc=style_map.get(style,style_map["正式"])
+    return f"""
+
+请根据以下主题写一篇文章：
+主题：{topic}
+目标字数：约{word_count}字
+风格要求：{style_desc}
+结构要求：
+1. 开头：吸引人，引出主题
+2. 正文：分3-5个小节，逻辑清晰
+3. 结尾：总结观点或行动建议
+只输出文章正文，不要加额外说明。
+
+"""
