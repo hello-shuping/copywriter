@@ -20,8 +20,8 @@ def init_db():
             user_input TEXT,
             ai_reply TEXT,
             created_at TIMESTAMP
-        )
-    """)
+            )
+        """)
     conn.commit()
     conn.close()
 

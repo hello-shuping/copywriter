@@ -38,9 +38,12 @@ def root():
 @app.post("/chat")
 async def chat(request:ChatRequest):
     logger.info(f"收到请求 user_id={request.user_id}")                    #日志
-    reply= await core.agent.chat(request.user_id,request.user_input)
-    logger.info(f"请求处理完成 user_id={request.user_id}")                     #日志
-    return {"reply":reply}
+    try:
+        reply= await core.agent.chat(request.user_id,request.user_input)
+        return {"reply":reply}
+    except Exception as e:
+        logger.error(f"请求处理异常: {e}")
+        return {"reply": "抱歉，处理过程中出现了问题，请稍后再试。"}
 
 
 if __name__=="__main__":
