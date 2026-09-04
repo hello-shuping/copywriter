@@ -12,9 +12,10 @@ load_dotenv()
 
 class Config:
     # API配置
+    MODEL = os.getenv("MODEL")
     API_KEY = os.getenv("API_KEY")
     BASE_URL = os.getenv("BASE_URL")
-    MODEL = os.getenv("MODEL")
+    
 
     # Agent默认参数
     SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT","你是一个有用的助手")

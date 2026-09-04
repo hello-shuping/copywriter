@@ -11,6 +11,8 @@ from pydantic import BaseModel
 import core.agent
 from config import config
 
+from logger import logger        #日志
+
 
 app=FastAPI(
     title=config.APP_TITLE,
@@ -35,7 +37,9 @@ def root():
 
 @app.post("/chat")
 async def chat(request:ChatRequest):
+    logger.info(f"收到请求 user_id={request.user_id}")                    #日志
     reply= await core.agent.chat(request.user_id,request.user_input)
+    logger.info(f"请求处理完成 user_id={request.user_id}")                     #日志
     return {"reply":reply}
 
 
