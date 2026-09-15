@@ -7,7 +7,9 @@ def polish(text: str, style: str = "正式") -> str:
         "简洁": "用最少的字表达最清晰的意思，句子短，但保持现代口语，不要用文言文",
         "小红书": "小红书风格，带emoji，语气亲切，像推荐好物"    
     }
-    style_desc = style_map.get(style, style_map["正式"])
+    if style not in style_map:
+        style = "正式"
+    style_desc = style_map[style]
     return f"""
 
 请将以下文案润色成「{style}」风格。

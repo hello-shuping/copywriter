@@ -14,18 +14,13 @@ from config import config
 from logger import logger        #日志
 
 
+
+
 app=FastAPI(
     title=config.APP_TITLE,
     description=config.APP_DESCRIPTION,
     version=config.APP_VERSION
 )
-
-
-class ChatRequest(BaseModel):
-    user_id:str
-    user_input:str
-
-
 @app.get("/")
 def root():
     return {
@@ -34,6 +29,12 @@ def root():
         "version":config.APP_VERSION
     }
 
+
+
+
+class ChatRequest(BaseModel):
+    user_id:str
+    user_input:str
 
 @app.post("/chat")
 async def chat(request:ChatRequest):
