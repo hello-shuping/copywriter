@@ -157,7 +157,7 @@ HTML = """
         <div class="chat" id="chat">
             <div class="msg ai">
                 <div class="avatar">🤖</div>
-                <div class="bubble">你好！我是你的文案助手，试试让我润色一段文案，或者生成几个标题～</div>
+                <div class="bubble">你好！我是你的文案助手 ✨<br><br>💡 输入 <b>/history</b> 查看历史记录<br>🗑️ 输入 <b>/delete</b> 清空历史记录<br><br>或者直接告诉我你想做什么～</div>
             </div>
         </div>
         <div class="input-area">
@@ -200,7 +200,7 @@ HTML = """
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-Auth-Key": "test123"
+                        "X-Auth-Key": "3d9aaa239852fa5466cbd45d252244e3b267f33d690f8519bb17e70102768bb0"
                     },
                     body: JSON.stringify({user_id: "u001", user_input: text})
                 });
@@ -286,4 +286,4 @@ async def proxy(request: Request):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=5501)
+    uvicorn.run(app, host="0.0.0.0", port=5500)

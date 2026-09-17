@@ -81,3 +81,17 @@ def load_history(user_id: str, limit: int = 5, system_prompt: str = ""):
     conn.close()
     return messages 
 
+
+def clear_history(user_id):
+    """删除某个用户的所有对话记录"""
+    conn = psycopg2.connect(
+        host=config.DB_HOST,
+        port=config.DB_PORT,
+        database=config.DB_DATABASE,
+        user=config.DB_USER,
+        password=config.DB_PASSWORD
+    )
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM conversations WHERE user_id = %s", (user_id,))
+    conn.commit()
+    conn.close()

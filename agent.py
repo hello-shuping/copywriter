@@ -4,7 +4,7 @@ import json
 from openai import AsyncOpenAI
 
 from config import config
-from db.ccs import init_db, save_to_db, load_history
+from db.ccs import init_db, save_to_db, load_history,clear_history
 from tools import TOOLS
 from tools.schemas import TOOL_SCHEMAS
 from logger import logger
@@ -21,6 +21,31 @@ user_history = {}
 
 
 async def chat_stream(user_id, user_input):
+    # ===== 命令：查看历史 =====
+    if user_input.strip().lower() == "/history":
+        if user_id not in user_history:
+            user_history[user_id] = load_history(user_id, 20, config.SYSTEM_PROMPT)
+        messages = user_history[user_id]
+        lines = []
+        for m in messages:
+            if m["role"] == "user":
+                lines.append(f"你：{m['content']}")
+            elif m["role"] == "assistant":
+                lines.append(f"AI：{m['content']}")
+        yield "\n".join(lines) if lines else "暂无历史记录"
+        return
+
+    # ===== 命令：清空历史 =====
+    if user_input.strip().lower() == "/delete":
+        clear_history(user_id)
+        user_history[user_id] = [
+            {"role": "system", "content": config.SYSTEM_PROMPT}
+        ]
+        yield "已清空历史记录"
+        return
+    # ===========================
+
+
     try:
         # 1. 加载/更新历史
         if user_id not in user_history:
