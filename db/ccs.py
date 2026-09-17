@@ -45,13 +45,13 @@ def save_to_db(user_id, user_input, ai_reply):
 
 
 
-def load_history(user_id: str, limit: int = 20, system_prompt: str = ""):
+def load_history(user_id: str, limit: int = 5, system_prompt: str = ""):
     """
     加载用户最近 limit 条历史记录
     
     参数：
         user_id: 用户ID
-        limit: 加载条数（默认20）
+        limit: 加载条数（默认5）
         system_prompt: 系统提示词，会放在消息列表最前面（由外部传入）
     
     返回：

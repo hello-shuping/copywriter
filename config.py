@@ -11,15 +11,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
+    AUTH_KEY = os.getenv("AUTH_KEY", "").strip() #API_KEY鉴权
     #LLM API配置
     MODEL = os.getenv("MODEL")
-    API_KEY = os.getenv("API_KEY")
+    API_KEY = os.getenv("API_KEY","")
     BASE_URL = os.getenv("BASE_URL")
     #LLM 默认参数
     SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT","你是一个有用的助手")
     DEFAULT_TEMPERATURE = float(os.getenv("DEFAULT_TEMPERATURE","0.7"))
     MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH","20"))
-
+    MAX_INPUT_LENGTH = int(os.getenv("MAX_INPUT_LENGTH", "2000"))
 
     #应用元数据
     APP_TITLE = os.getenv("APP_TITLE","Copywriter Agent")
