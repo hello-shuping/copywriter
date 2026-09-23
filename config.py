@@ -19,7 +19,7 @@ class Config:
     #LLM 默认参数
     SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT","你是一个有用的助手")
     DEFAULT_TEMPERATURE = float(os.getenv("DEFAULT_TEMPERATURE","0.7"))
-    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH","20"))
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH","5"))
     MAX_INPUT_LENGTH = int(os.getenv("MAX_INPUT_LENGTH", "2000"))
 
     #应用元数据

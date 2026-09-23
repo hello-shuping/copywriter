@@ -24,7 +24,7 @@ async def chat_stream(user_id, user_input):
     # ===== 命令：查看历史 =====
     if user_input.strip().lower() == "/history":
         if user_id not in user_history:
-            user_history[user_id] = load_history(user_id, 20, config.SYSTEM_PROMPT)
+            user_history[user_id] = load_history(user_id, 5, config.SYSTEM_PROMPT)
         messages = user_history[user_id]
         lines = []
         for m in messages:
@@ -49,7 +49,7 @@ async def chat_stream(user_id, user_input):
     try:
         # 1. 加载/更新历史
         if user_id not in user_history:
-            user_history[user_id] = load_history(user_id, 20, config.SYSTEM_PROMPT)
+            user_history[user_id] = load_history(user_id, 5, config.SYSTEM_PROMPT)
             logger.info(f"用户 {user_id} 加载历史，共 {len(user_history[user_id])} 条消息")
 
         user_history[user_id].append({"role": "user", "content": user_input})

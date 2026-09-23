@@ -167,6 +167,13 @@ HTML = """
     </div>
 
     <script>
+        // 👈 新增：生成或获取本机专属 user_id
+        let userId = localStorage.getItem('chat_user_id');
+        if (!userId) {
+            userId = 'user_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+            localStorage.setItem('chat_user_id', userId);
+        }
+        // 👆 新增结束
         const chat = document.getElementById("chat");
         const input = document.getElementById("input");
         const sendBtn = document.getElementById("send");
@@ -202,7 +209,7 @@ HTML = """
                         "Content-Type": "application/json",
                         "X-Auth-Key": "3d9aaa239852fa5466cbd45d252244e3b267f33d690f8519bb17e70102768bb0"
                     },
-                    body: JSON.stringify({user_id: "u001", user_input: text})
+                    body: JSON.stringify({user_id: userId, user_input: text})
                 });
 
                 if (!response.ok) {
