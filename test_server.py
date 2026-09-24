@@ -171,7 +171,7 @@ HTML = """
         <div class="header">
             <div>
                 <h1>✨ AI 文案助手</h1>
-                <p>润色 · 生成标题 · 写文章 · 总结</p>
+                <p>生成标题 · 撰写文章 · 润色总结 · 数据分析</p>
             </div>
             <div class="header-actions">
                 <button class="upload-btn" onclick="document.getElementById('excelInput').click()">
@@ -396,7 +396,7 @@ async def upload_articles(file: UploadFile = File(...)):
     with open(tmp_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    from viral.import_excel import import_from_excel
+    from content.import_excel import import_from_excel
     try:
         import_from_excel(tmp_path)
         return {"msg": "Excel 导入成功"}

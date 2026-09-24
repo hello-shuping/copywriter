@@ -1,7 +1,7 @@
 
 import time
 import pandas as pd
-from viral.gss import save_article
+from content.own import save_article
 
 
 def import_from_excel(path):

@@ -1,6 +1,6 @@
 #analyze_stats.py
 
-from viral.gss import get_stats_summary
+from content.own import get_stats_summary
 
 
 def analyze_stats(platform: str = "小红书") -> str:
