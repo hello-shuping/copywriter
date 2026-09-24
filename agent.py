@@ -5,7 +5,8 @@ from openai import AsyncOpenAI
 
 from config import config
 from db.ccs import init_db, save_to_db, load_history,clear_history
-from content.own import init_db_emb
+from content.own import init_db_own
+from content.viral import init_db_viral
 from tools import TOOLS
 from tools.schemas import TOOL_SCHEMAS
 from logger import logger
@@ -17,7 +18,8 @@ client = AsyncOpenAI(
 )
 
 init_db()
-init_db_emb()
+init_db_own()
+init_db_viral()
 
 user_history = {}
 

@@ -1,15 +1,15 @@
-# gss.py
+# own.py
 
 
 from openai import OpenAI
 from config import config,get_conn                      
 
-def init_db_emb():
+def init_db_own():
     conn = get_conn()
     cursor = conn.cursor()  
     cursor.execute("CREATE EXTENSION IF NOT EXISTS vector" )
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS articles (
+        CREATE TABLE IF NOT EXISTS own_articles (
             id SERIAL PRIMARY KEY,
             title TEXT,
             content TEXT,
@@ -54,7 +54,7 @@ def save_article(title,content,platform,publish_date,views,likes,collects,commen
     conn = get_conn()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO articles
+        INSERT INTO own_articles
         (title, content, platform, publish_date, views, likes, collects, comments, shares, followers_gained, embedding)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
        """, (title, content, platform, publish_date,
@@ -67,7 +67,7 @@ def search_viral(query, limit=5):
     conn = get_conn()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT title, content FROM articles
+        SELECT title, content FROM own_articles
         ORDER BY embedding <=> %s::vector
         LIMIT %s
     """, (query_embedding, limit))
@@ -90,7 +90,7 @@ def get_stats_summary(platform=None):
             comments,
             ROUND((likes + collects + comments)::numeric / NULLIF(views, 0) * 100, 2) AS 互动率,
             ROUND(collects::numeric / NULLIF(views, 0) * 100, 2) AS 收藏率
-        FROM articles
+        FROM own_articles
     """
     if platform:
         sql += " WHERE platform = %s ORDER BY 互动率 DESC"

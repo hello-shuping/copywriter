@@ -9,7 +9,7 @@ def import_from_excel(path):
     from config import get_conn
     conn = get_conn()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM articles")
+    cursor.execute("DELETE FROM own_articles")
     conn.commit()
     conn.close()
     # ===== 新增结束 =====
@@ -44,4 +44,4 @@ def import_from_excel(path):
 
 
 if __name__ == "__main__":
-    import_from_excel("articles.xlsx")
+    import_from_excel("own_articles.xlsx")

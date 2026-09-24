@@ -180,13 +180,16 @@ HTML = """
                 <button class="upload-btn" onclick="downloadExcel()">
                     📥 导出
                 </button>
+                <button class="upload-btn" onclick="downloadViral()">
+                    📥 导出爆文
+                </button>
             </div>
             <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none" onchange="uploadExcel()">
         </div>
         <div class="chat" id="chat">
             <div class="msg ai">
                 <div class="avatar">🤖</div>
-                <div class="bubble">你好！我是你的文案助手 ✨<br><br>💡 输入 <b>/history</b> 查看历史记录<br>🗑️ 输入 <b>/delete</b> 清空历史记录<br>📊 右上角导入 / 导出 Excel<br><br>或者直接告诉我你想做什么～</div>
+                <div class="bubble">你好！我是你的文案助手 ✨<br><br>💡 输入 <b>/history</b> 查看历史记录<br>🗑️ 输入 <b>/delete</b> 清空历史记录<br>📊 右上角导入 / 导出 Excel<br>📈 说"<b>分析一下数据</b>"查看运营分析<br><br>或者直接告诉我你想做什么～</div>
             </div>
         </div>
         <div class="input-area">
@@ -204,7 +207,7 @@ HTML = """
         const chat = document.getElementById("chat");
         const input = document.getElementById("input");
         const sendBtn = document.getElementById("send");
-        const AUTH_KEY = "d9aaa239852fa5466cbd45d252244e3b267f33d690f8519bb17e70102768bb0";
+        const AUTH_KEY = "3d9aaa239852fa5466cbd45d252244e3b267f33d690f8519bb17e70102768bb0";
 
         function addMsg(role, text = "") {
             const msg = document.createElement("div");
@@ -268,7 +271,7 @@ HTML = """
             input.focus();
         }
 
-        // ===== 上传 Excel =====
+        // ===== 上传自己的文章 Excel =====
         async function uploadExcel() {
             const fileInput = document.getElementById('excelInput');
             const file = fileInput.files[0];
@@ -281,7 +284,7 @@ HTML = """
             formData.append("file", file);
 
             try {
-                const resp = await fetch("/upload_articles", {
+                const resp = await fetch("/upload_own_articles", {
                     method: "POST",
                     headers: {
                         "X-Auth-Key": AUTH_KEY
@@ -303,13 +306,13 @@ HTML = """
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // ===== 下载 Excel =====
+        // ===== 导出自己的文章 =====
         async function downloadExcel() {
             const bubble = addMsg("ai");
             bubble.innerHTML = "📥 正在导出...";
 
             try {
-                const resp = await fetch("/export_articles", {
+                const resp = await fetch("/export_own_articles", {
                     method: "GET",
                     headers: {
                         "X-Auth-Key": AUTH_KEY
@@ -325,13 +328,49 @@ HTML = """
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "articles_export.xlsx";
+                a.download = "own_articles_export.xlsx";
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
 
                 bubble.innerHTML = "✅ 导出成功，请查看下载文件夹";
+            } catch (e) {
+                bubble.innerHTML = `❌ 导出出错：${e.message}`;
+            }
+
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // ===== 导出爆文 =====
+        async function downloadViral() {
+            const bubble = addMsg("ai");
+            bubble.innerHTML = "📥 正在导出爆文...";
+
+            try {
+                const resp = await fetch("/export_viral", {
+                    method: "GET",
+                    headers: {
+                        "X-Auth-Key": AUTH_KEY
+                    }
+                });
+
+                if (!resp.ok) {
+                    bubble.innerHTML = "❌ 导出失败";
+                    return;
+                }
+
+                const blob = await resp.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "viral_articles_export.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                bubble.innerHTML = "✅ 爆文导出成功，请查看下载文件夹";
             } catch (e) {
                 bubble.innerHTML = `❌ 导出出错：${e.message}`;
             }
@@ -389,9 +428,9 @@ async def proxy(request: Request):
     return StreamingResponse(stream_generator(), media_type="text/plain")
 
 
-# ===== 上传 Excel =====
-@app.post("/upload_articles")
-async def upload_articles(file: UploadFile = File(...)):
+# ===== 上传自己的文章 =====
+@app.post("/upload_own_articles")
+async def upload_own_articles(file: UploadFile = File(...)):
     tmp_path = "temp_upload.xlsx"
     with open(tmp_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
@@ -407,28 +446,53 @@ async def upload_articles(file: UploadFile = File(...)):
         )
 
 
-# ===== 导出 Excel =====
-@app.get("/export_articles")
-async def export_articles():
+# ===== 导出自己的文章 =====
+@app.get("/export_own_articles")
+async def export_own_articles():
     from config import get_conn
     conn = get_conn()
     df = pd.read_sql("""
         SELECT id, title, content, platform, publish_date,
                views, likes, collects, comments, shares, followers_gained
-        FROM articles
+        FROM own_articles
         ORDER BY id DESC
     """, conn)
     conn.close()
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="articles")
+        df.to_excel(writer, index=False, sheet_name="own_articles")
     output.seek(0)
 
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=articles_export.xlsx"}
+        headers={"Content-Disposition": "attachment; filename=own_articles_export.xlsx"}
+    )
+
+
+# ===== 导出爆文 =====
+@app.get("/export_viral")
+async def export_viral():
+    from config import get_conn
+    conn = get_conn()
+    df = pd.read_sql("""
+        SELECT id, title, content, author, author_followers,
+               platform, note_url, likes, collects, comments, collected_date
+        FROM viral_articles
+        ORDER BY id DESC
+    """, conn)
+    conn.close()
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="viral_articles")
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=viral_articles_export.xlsx"}
     )
 
 
