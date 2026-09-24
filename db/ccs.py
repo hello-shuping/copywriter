@@ -1,18 +1,11 @@
-import psycopg2
-from datetime import datetime
-from config import config
 
-from logger import logger                              #日志
+from datetime import datetime
+from config import get_conn
+
 
 def init_db():
-    conn = psycopg2.connect(
-        host=config.DB_HOST,
-        port=config.DB_PORT,
-        database=config.DB_DATABASE,
-        user=config.DB_USER,
-        password=config.DB_PASSWORD
-    )
-    cursor = conn.cursor()
+    conn = get_conn()
+    cursor = conn.cursor()  
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS conversations (
             id SERIAL PRIMARY KEY,             
@@ -21,20 +14,14 @@ def init_db():
             ai_reply TEXT,
             created_at TIMESTAMP
             )
-        """)
+        """)                        
     conn.commit()
     conn.close()
 
 # 95%以上的业务表都会有一个自增id，这是最稳妥、最通用的设计。
 
 def save_to_db(user_id, user_input, ai_reply):
-    conn = psycopg2.connect(
-        host=config.DB_HOST,
-        port=config.DB_PORT,
-        database=config.DB_DATABASE,
-        user=config.DB_USER,
-        password=config.DB_PASSWORD
-    )
+    conn = get_conn()
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO conversations (user_id, user_input, ai_reply, created_at) VALUES (%s, %s, %s, %s)",
@@ -57,13 +44,7 @@ def load_history(user_id: str, limit: int = 5, system_prompt: str = ""):
     返回：
         messages: 可直接用于大模型调用的消息列表
     """
-    conn = psycopg2.connect(
-        host=config.DB_HOST,
-        port=config.DB_PORT,
-        database=config.DB_DATABASE,
-        user=config.DB_USER,
-        password=config.DB_PASSWORD
-    )
+    conn = get_conn()
     cursor = conn.cursor()
     cursor.execute(
         "SELECT user_input, ai_reply FROM conversations WHERE user_id = %s ORDER BY created_at DESC LIMIT %s",
@@ -84,13 +65,7 @@ def load_history(user_id: str, limit: int = 5, system_prompt: str = ""):
 
 def clear_history(user_id):
     """删除某个用户的所有对话记录"""
-    conn = psycopg2.connect(
-        host=config.DB_HOST,
-        port=config.DB_PORT,
-        database=config.DB_DATABASE,
-        user=config.DB_USER,
-        password=config.DB_PASSWORD
-    )
+    conn = get_conn()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM conversations WHERE user_id = %s", (user_id,))
     conn.commit()

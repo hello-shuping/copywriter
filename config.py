@@ -38,10 +38,24 @@ class Config:
     DB_DATABASE = os.getenv("DB_DATABASE","postgres")
     DB_USER = os.getenv("DB_USER","postgres")
     DB_PASSWORD = os.getenv("DB_PASSWORD","")
+    EMBEDDING_API_KEY = os.getenv("EMBEDDING_API_KEY", "")
+    EMBEDDING_BASE_URL = os.getenv("EMBEDDING_BASE_URL", "")
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "")
+    # config.py 末尾加
 
+    DB_CONFIG = {
+        "host": os.getenv("DB_HOST", "localhost"),
+        "port": int(os.getenv("DB_PORT", "5432")),
+        "database": os.getenv("DB_DATABASE", "postgres"),
+        "user": os.getenv("DB_USER", "postgres"),
+        "password": os.getenv("DB_PASSWORD", ""),
+    }
 
     
 config = Config()
 
+def get_conn():
+    import psycopg2
+    return psycopg2.connect(**config.DB_CONFIG)
 
 

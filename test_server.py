@@ -1,8 +1,11 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 import httpx
 import uvicorn
 import json
+import shutil
+import io
+import pandas as pd
 
 app = FastAPI()
 
@@ -39,9 +42,24 @@ HTML = """
             padding: 20px 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .header h1 { font-size: 18px; font-weight: 600; }
         .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+        .header-actions { display: flex; gap: 8px; }
+        .upload-btn {
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .upload-btn:hover { background: rgba(255,255,255,0.3); }
         .chat {
             flex: 1;
             overflow-y: auto;
@@ -151,13 +169,24 @@ HTML = """
 <body>
     <div class="container">
         <div class="header">
-            <h1>✨ AI 文案助手</h1>
-            <p>润色 · 生成标题 · 写文章 · 总结</p>
+            <div>
+                <h1>✨ AI 文案助手</h1>
+                <p>润色 · 生成标题 · 写文章 · 总结</p>
+            </div>
+            <div class="header-actions">
+                <button class="upload-btn" onclick="document.getElementById('excelInput').click()">
+                    📊 导入
+                </button>
+                <button class="upload-btn" onclick="downloadExcel()">
+                    📥 导出
+                </button>
+            </div>
+            <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none" onchange="uploadExcel()">
         </div>
         <div class="chat" id="chat">
             <div class="msg ai">
                 <div class="avatar">🤖</div>
-                <div class="bubble">你好！我是你的文案助手 ✨<br><br>💡 输入 <b>/history</b> 查看历史记录<br>🗑️ 输入 <b>/delete</b> 清空历史记录<br><br>或者直接告诉我你想做什么～</div>
+                <div class="bubble">你好！我是你的文案助手 ✨<br><br>💡 输入 <b>/history</b> 查看历史记录<br>🗑️ 输入 <b>/delete</b> 清空历史记录<br>📊 右上角导入 / 导出 Excel<br><br>或者直接告诉我你想做什么～</div>
             </div>
         </div>
         <div class="input-area">
@@ -167,16 +196,15 @@ HTML = """
     </div>
 
     <script>
-        // 👈 新增：生成或获取本机专属 user_id
         let userId = localStorage.getItem('chat_user_id');
         if (!userId) {
             userId = 'user_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
             localStorage.setItem('chat_user_id', userId);
         }
-        // 👆 新增结束
         const chat = document.getElementById("chat");
         const input = document.getElementById("input");
         const sendBtn = document.getElementById("send");
+        const AUTH_KEY = "d9aaa239852fa5466cbd45d252244e3b267f33d690f8519bb17e70102768bb0";
 
         function addMsg(role, text = "") {
             const msg = document.createElement("div");
@@ -199,7 +227,6 @@ HTML = """
             sendBtn.disabled = true;
 
             addMsg("user", text).querySelector(".cursor").remove();
-
             const bubble = addMsg("ai");
 
             try {
@@ -207,7 +234,7 @@ HTML = """
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-Auth-Key": "3d9aaa239852fa5466cbd45d252244e3b267f33d690f8519bb17e70102768bb0"
+                        "X-Auth-Key": AUTH_KEY
                     },
                     body: JSON.stringify({user_id: userId, user_input: text})
                 });
@@ -241,6 +268,77 @@ HTML = """
             input.focus();
         }
 
+        // ===== 上传 Excel =====
+        async function uploadExcel() {
+            const fileInput = document.getElementById('excelInput');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const bubble = addMsg("ai");
+            bubble.innerHTML = "📊 正在导入，请稍候...";
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const resp = await fetch("/upload_articles", {
+                    method: "POST",
+                    headers: {
+                        "X-Auth-Key": AUTH_KEY
+                    },
+                    body: formData
+                });
+
+                const result = await resp.json();
+                if (resp.ok) {
+                    bubble.innerHTML = `✅ ${result.msg}`;
+                } else {
+                    bubble.innerHTML = `❌ 导入失败：${result.detail || "未知错误"}`;
+                }
+            } catch (e) {
+                bubble.innerHTML = `❌ 上传出错：${e.message}`;
+            }
+
+            fileInput.value = "";
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // ===== 下载 Excel =====
+        async function downloadExcel() {
+            const bubble = addMsg("ai");
+            bubble.innerHTML = "📥 正在导出...";
+
+            try {
+                const resp = await fetch("/export_articles", {
+                    method: "GET",
+                    headers: {
+                        "X-Auth-Key": AUTH_KEY
+                    }
+                });
+
+                if (!resp.ok) {
+                    bubble.innerHTML = "❌ 导出失败";
+                    return;
+                }
+
+                const blob = await resp.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "articles_export.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                bubble.innerHTML = "✅ 导出成功，请查看下载文件夹";
+            } catch (e) {
+                bubble.innerHTML = `❌ 导出出错：${e.message}`;
+            }
+
+            chat.scrollTop = chat.scrollHeight;
+        }
+
         input.addEventListener("keydown", e => {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -262,7 +360,6 @@ async def index():
 async def proxy(request: Request):
     body = await request.body()
 
-    # 代理层长度检查
     try:
         data = json.loads(body)
         if len(data.get("user_input", "")) > 2000:
@@ -290,6 +387,49 @@ async def proxy(request: Request):
                     yield chunk
 
     return StreamingResponse(stream_generator(), media_type="text/plain")
+
+
+# ===== 上传 Excel =====
+@app.post("/upload_articles")
+async def upload_articles(file: UploadFile = File(...)):
+    tmp_path = "temp_upload.xlsx"
+    with open(tmp_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    from viral.import_excel import import_from_excel
+    try:
+        import_from_excel(tmp_path)
+        return {"msg": "Excel 导入成功"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"导入失败：{str(e)}"}
+        )
+
+
+# ===== 导出 Excel =====
+@app.get("/export_articles")
+async def export_articles():
+    from config import get_conn
+    conn = get_conn()
+    df = pd.read_sql("""
+        SELECT id, title, content, platform, publish_date,
+               views, likes, collects, comments, shares, followers_gained
+        FROM articles
+        ORDER BY id DESC
+    """, conn)
+    conn.close()
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="articles")
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=articles_export.xlsx"}
+    )
 
 
 if __name__ == "__main__":

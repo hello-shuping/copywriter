@@ -103,4 +103,20 @@ TOOL_SCHEMAS = [
             },
         },
     },
+    {
+    "type": "function",
+    "function": {
+        "name": "analyze_stats",
+        "description": "分析文案运营数据，用户说'分析数据'、'看看哪篇效果好'时调用",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "platform": {
+                    "type": "string",
+                    "description": "平台，小红书或公众号，默认小红书"
+                }
+            }
+        }
+    }
+}
 ]
