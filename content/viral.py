@@ -1,11 +1,20 @@
 # viral.py
 
-from config import get_conn
-from content.own import get_embedding
+from openai import OpenAI
+from config import config, get_conn
 
-from content.own import get_embedding
-from content.redfox import search_xhs_notes
+embedding_client = OpenAI(
+    api_key=config.EMBEDDING_API_KEY,
+    base_url=config.EMBEDDING_BASE_URL,
+)
 
+def get_embedding(text):
+    """把文字转成向量"""
+    response = embedding_client.embeddings.create(
+        model=config.EMBEDDING_MODEL,
+        input=text,
+    )
+    return response.data[0].embedding
 
 
 def init_db_viral():
@@ -72,7 +81,7 @@ def fetch_and_save(keyword: str, limit: int = 10):
         except Exception as e:
             print(f"❌ 失败: {e}")
 
-            
+
 
 def search_viral(query: str, limit: int = 5):
     """先按向量粗筛 20 条，再按点赞排序取前 N 条"""
