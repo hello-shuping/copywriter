@@ -2,6 +2,8 @@
 
 from openai import OpenAI
 from config import config, get_conn
+from content.redfox import search_xhs_notes
+
 
 embedding_client = OpenAI(
     api_key=config.EMBEDDING_API_KEY,
