@@ -7,6 +7,8 @@ import shutil
 import io
 import pandas as pd
 
+from config import config
+
 app = FastAPI()
 
 HTML = """
@@ -18,171 +20,267 @@ HTML = """
     <title>AI 文案助手</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0e1a;
+            --panel: #111827;
+            --panel-2: #1a2235;
+            --border: #1f2a44;
+            --text: #e5e9f0;
+            --text-dim: #8892a8;
+            --accent: #00d4ff;
+            --accent-dim: #0891b2;
+            --user: #0ea5e9;
+        }
+
         body {
-            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: "SF Mono", "JetBrains Mono", "Consolas", -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            background-image:
+                radial-gradient(circle at 20% 0%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
         }
+
         .container {
             width: 100%;
-            max-width: 720px;
+            max-width: 760px;
             height: 85vh;
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            box-shadow: 0 0 60px rgba(0, 212, 255, 0.06);
         }
+
         .header {
-            padding: 20px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
+            padding: 18px 24px;
+            background: linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .header h1 { font-size: 18px; font-weight: 600; }
-        .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
-        .header-actions { display: flex; gap: 8px; }
-        .upload-btn {
-            padding: 8px 14px;
-            background: rgba(255,255,255,0.2);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.5);
-            border-radius: 20px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: background 0.2s;
+
+        .header-title h1 {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .upload-btn:hover { background: rgba(255,255,255,0.3); }
+
+        .header-title h1::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .header-title p {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+            padding-left: 16px;
+        }
+
+        .header-actions { display: flex; gap: 8px; }
+
+        .upload-btn {
+            padding: 7px 14px;
+            background: var(--panel-2);
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        .upload-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+        }
+
         .chat {
             flex: 1;
             overflow-y: auto;
             padding: 24px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            background: #f7f8fc;
+            gap: 20px;
         }
+
         .msg {
             display: flex;
-            gap: 10px;
-            max-width: 85%;
-            animation: fadeIn 0.3s ease;
+            gap: 12px;
+            max-width: 88%;
+            animation: fadeIn 0.4s ease;
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
         .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+
         .avatar {
-            width: 36px; height: 36px;
-            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 16px;
+            font-size: 14px;
             flex-shrink: 0;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
         }
-        .msg.user .avatar { background: #667eea; color: #fff; }
-        .msg.ai .avatar { background: #e8eaf6; color: #667eea; }
+
+        .msg.user .avatar {
+            color: var(--user);
+            border-color: rgba(14, 165, 233, 0.3);
+            background: rgba(14, 165, 233, 0.08);
+        }
+
+        .msg.ai .avatar {
+            color: var(--accent);
+            border-color: rgba(0, 212, 255, 0.3);
+            background: rgba(0, 212, 255, 0.08);
+        }
+
         .bubble {
             padding: 12px 16px;
-            border-radius: 14px;
-            font-size: 15px;
-            line-height: 1.6;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.7;
             white-space: pre-wrap;
             word-break: break-word;
         }
+
         .msg.user .bubble {
-            background: #667eea;
-            color: #fff;
-            border-bottom-right-radius: 4px;
+            background: rgba(14, 165, 233, 0.12);
+            border: 1px solid rgba(14, 165, 233, 0.25);
+            color: var(--text);
         }
+
         .msg.ai .bubble {
-            background: #fff;
-            color: #333;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            color: var(--text);
         }
+
         .bubble .cursor {
             display: inline-block;
-            width: 8px;
-            height: 16px;
-            background: #667eea;
-            margin-left: 2px;
+            width: 7px;
+            height: 14px;
+            background: var(--accent);
+            margin-left: 3px;
             vertical-align: text-bottom;
             animation: blink 1s infinite;
+            box-shadow: 0 0 6px var(--accent);
         }
+
         @keyframes blink {
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0; }
         }
+
         .input-area {
             padding: 16px 20px;
-            background: #fff;
-            border-top: 1px solid #eee;
+            background: var(--panel-2);
+            border-top: 1px solid var(--border);
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            align-items: center;
         }
+
         .input-area input {
             flex: 1;
             padding: 12px 16px;
-            border: 1px solid #e0e0e0;
-            border-radius: 24px;
-            font-size: 15px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text);
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
         }
-        .input-area input:focus { border-color: #667eea; }
+
+        .input-area input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
+        }
+
+        .input-area input::placeholder { color: var(--text-dim); }
+
         .input-area button {
-            padding: 0 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
+            padding: 12px 24px;
+            background: var(--accent);
+            color: var(--bg);
             border: none;
-            border-radius: 24px;
-            font-size: 15px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 600;
+            font-family: inherit;
+            letter-spacing: 1px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.2s;
         }
+
         .input-area button:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: #33ddff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
         }
+
         .input-area button:disabled {
-            opacity: 0.5;
+            opacity: 0.3;
             cursor: not-allowed;
         }
+
         .chat::-webkit-scrollbar { width: 6px; }
         .chat::-webkit-scrollbar-thumb {
-            background: #ccc;
+            background: var(--border);
             border-radius: 3px;
         }
+        .chat::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+        .chat::-webkit-scrollbar-track { background: transparent; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div>
-                <h1>✨ AI 文案助手</h1>
+            <div class="header-title">
+                <h1>AI 文案助手</h1>
                 <p>生成标题 · 撰写文章 · 润色总结 · 数据分析</p>
             </div>
             <div class="header-actions">
-                <button class="upload-btn" onclick="document.getElementById('excelInput').click()">
-                    📊 导入
-                </button>
-                <button class="upload-btn" onclick="downloadExcel()">
-                    📥 导出
-                </button>
-                <button class="upload-btn" onclick="downloadViral()">
-                    📥 导出爆文
-                </button>
+                <button class="upload-btn" onclick="document.getElementById('excelInput').click()">📊 导入</button>
+                <button class="upload-btn" onclick="downloadExcel()">📥 导出</button>
+                <button class="upload-btn" onclick="downloadViral()">📥 导出爆文</button>
             </div>
             <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none" onchange="uploadExcel()">
         </div>
@@ -207,7 +305,7 @@ HTML = """
         const chat = document.getElementById("chat");
         const input = document.getElementById("input");
         const sendBtn = document.getElementById("send");
-        const AUTH_KEY = "3d9aaa239852fa5466cbd45d252244e3b267f33d690f8519bb17e70102768bb0";
+        const AUTH_KEY = "__AUTH_KEY__";
 
         function addMsg(role, text = "") {
             const msg = document.createElement("div");
@@ -225,23 +323,16 @@ HTML = """
         async function send() {
             const text = input.value.trim();
             if (!text) return;
-
             input.value = "";
             sendBtn.disabled = true;
-
             addMsg("user", text).querySelector(".cursor").remove();
             const bubble = addMsg("ai");
-
             try {
                 const response = await fetch("/chat_stream", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Auth-Key": AUTH_KEY
-                    },
+                    headers: {"Content-Type": "application/json", "X-Auth-Key": AUTH_KEY},
                     body: JSON.stringify({user_id: userId, user_input: text})
                 });
-
                 if (!response.ok) {
                     const err = await response.json();
                     bubble.innerHTML = err.detail || "请求失败";
@@ -249,11 +340,9 @@ HTML = """
                     input.focus();
                     return;
                 }
-
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let fullText = "";
-
                 while (true) {
                     const {done, value} = await reader.read();
                     if (done) break;
@@ -261,37 +350,28 @@ HTML = """
                     bubble.innerHTML = fullText.replace(/\\n/g, "<br>") + '<span class="cursor"></span>';
                     chat.scrollTop = chat.scrollHeight;
                 }
-
                 bubble.innerHTML = fullText.replace(/\\n/g, "<br>");
             } catch (e) {
                 bubble.innerHTML = "抱歉，出错了：" + e.message;
             }
-
             sendBtn.disabled = false;
             input.focus();
         }
 
-        // ===== 上传自己的文章 Excel =====
         async function uploadExcel() {
             const fileInput = document.getElementById('excelInput');
             const file = fileInput.files[0];
             if (!file) return;
-
             const bubble = addMsg("ai");
             bubble.innerHTML = "📊 正在导入，请稍候...";
-
             const formData = new FormData();
             formData.append("file", file);
-
             try {
                 const resp = await fetch("/upload_own_articles", {
                     method: "POST",
-                    headers: {
-                        "X-Auth-Key": AUTH_KEY
-                    },
+                    headers: {"X-Auth-Key": AUTH_KEY},
                     body: formData
                 });
-
                 const result = await resp.json();
                 if (resp.ok) {
                     bubble.innerHTML = `✅ ${result.msg}`;
@@ -301,29 +381,19 @@ HTML = """
             } catch (e) {
                 bubble.innerHTML = `❌ 上传出错：${e.message}`;
             }
-
             fileInput.value = "";
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // ===== 导出自己的文章 =====
         async function downloadExcel() {
             const bubble = addMsg("ai");
             bubble.innerHTML = "📥 正在导出...";
-
             try {
                 const resp = await fetch("/export_own_articles", {
                     method: "GET",
-                    headers: {
-                        "X-Auth-Key": AUTH_KEY
-                    }
+                    headers: {"X-Auth-Key": AUTH_KEY}
                 });
-
-                if (!resp.ok) {
-                    bubble.innerHTML = "❌ 导出失败";
-                    return;
-                }
-
+                if (!resp.ok) { bubble.innerHTML = "❌ 导出失败"; return; }
                 const blob = await resp.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -333,33 +403,22 @@ HTML = """
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
-
                 bubble.innerHTML = "✅ 导出成功，请查看下载文件夹";
             } catch (e) {
                 bubble.innerHTML = `❌ 导出出错：${e.message}`;
             }
-
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // ===== 导出爆文 =====
         async function downloadViral() {
             const bubble = addMsg("ai");
             bubble.innerHTML = "📥 正在导出爆文...";
-
             try {
                 const resp = await fetch("/export_viral", {
                     method: "GET",
-                    headers: {
-                        "X-Auth-Key": AUTH_KEY
-                    }
+                    headers: {"X-Auth-Key": AUTH_KEY}
                 });
-
-                if (!resp.ok) {
-                    bubble.innerHTML = "❌ 导出失败";
-                    return;
-                }
-
+                if (!resp.ok) { bubble.innerHTML = "❌ 导出失败"; return; }
                 const blob = await resp.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -369,12 +428,10 @@ HTML = """
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
-
                 bubble.innerHTML = "✅ 爆文导出成功，请查看下载文件夹";
             } catch (e) {
                 bubble.innerHTML = `❌ 导出出错：${e.message}`;
             }
-
             chat.scrollTop = chat.scrollHeight;
         }
 
@@ -392,7 +449,7 @@ HTML = """
 
 @app.get("/")
 async def index():
-    return HTMLResponse(HTML)
+    return HTMLResponse(HTML.replace("__AUTH_KEY__", config.AUTH_KEY))
 
 
 @app.post("/chat_stream")

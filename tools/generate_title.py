@@ -1,3 +1,7 @@
+# generate_title.py
+
+from content.viral import search_viral
+
 def generate_title(topic: str, count: int = 5, style: str = "淘宝") -> str:
     style_map = {
         "淘宝": "30字以内，空格分隔无标点，含至少3个搜索关键词，直白硬核不夸张",
@@ -5,6 +9,14 @@ def generate_title(topic: str, count: int = 5, style: str = "淘宝") -> str:
     }
 
     current_rules = style_map.get(style, style_map["淘宝"])
+        # 查爆文库
+    similar = search_viral(topic, limit=5)
+    if similar:
+        reference = "\n".join([f"- {a['title']}" for a in similar if a['title']])
+        reference_block = f"\n参考这些爆款标题的风格：\n{reference}\n"
+    else:
+        reference_block = ""
+
 
     return f"""生成 {count} 个「{style}」风格标题，主题：{topic}。
 

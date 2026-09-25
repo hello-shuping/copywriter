@@ -1,5 +1,7 @@
 #write_article.py 撰写文章
 
+from content.viral import search_viral
+
 def write_article(topic:str,word_count:int=1200,style:str="正式") ->str:
     style_map = {
     "正式": "语言严谨，逻辑清晰，适合职场阅读",
@@ -9,7 +11,17 @@ def write_article(topic:str,word_count:int=1200,style:str="正式") ->str:
     "口语化": "像跟朋友聊天一样，少用书面语，多举具体例子，语气自然",
     }
     style_desc=style_map.get(style,style_map["正式"])
-    return f"""
+
+    # 查爆文库
+    similar = search_viral(topic, limit=3)
+    if similar:
+        reference = "\n\n".join([
+            f"【{a['title']}】\n{a['content'][:200]}..."
+            for a in similar if a['title']
+        ])
+        reference_block = f"\n参考这些爆款文章的结构和风格：\n{reference}\n"
+    else:
+        return f"""
 
 请根据以下主题写一篇文章：
 主题：{topic}
